@@ -100,6 +100,8 @@ module control_unit(
                     ns = INT_HANDLE;
                 else if (is_two_byte) 
                     ns = FETCH2;
+                else if (is_loop) 
+                    ns = LOOP_DECIDE ; 
                 else 
                     ns = IDLE;
             end
@@ -111,6 +113,12 @@ module control_unit(
             end
             INT_HANDLE: begin
                 ns = IDLE;
+            end
+            LOOP_DECIDE : begin 
+                if (interrupt) 
+                    ns = INT_HANDLE ; 
+                else 
+                    ns = IDLE ; 
             end
             default: ns = IDLE;
         endcase
@@ -153,6 +161,18 @@ module control_unit(
                 pc_src = 3'd5; // PC ← M[1] (interrupt vector)
                 mem_read = 1;  // Read interrupt vector
                 flush = 1; // Flush the pipeline
+            end
+            LOOP_DECIDE : begin // In this state loop branching condition is evaluated  (Desicion of jump or not is taken)
+                pc_write = 1 ; 
+                ir_write = 1 ; 
+                mem_read = 1 ; 
+                mem_src = 0 ; //PC source 
+                if (!z_flag) begin
+                    pc_src = 2; // [PC←Rb]
+                    flush = 1;
+                end
+                else 
+                    pc_src = 0 ; // PC+1 
             end
             IDLE : begin
                 imm_write = 0; 
@@ -285,6 +305,163 @@ module control_unit(
                         mem_read = 1;
                         pc_src = 3'd0;
                         wb_result_mux = 3;
+                    end
+            //  ------------------- B-FORMAT ---------------------- //
+                    COND_BRANCHES : begin // JZ & JZ & JC & JV 
+                        mem_read = 1 ; 
+                        case (brx) 
+                            0 : begin  // JZ 
+                                pc_write = 1 ;  
+                                if (!z_flag) 
+                                    pc_src = 0 ;  
+                                else begin 
+                                    pc_src = 2 ; // PC ← R[rb] 
+                                    flush = 1 ;  // ==>> FLSUH due to jump instruction [Handle in integretion]
+                                end
+                            end
+                            1 : begin  // JN 
+                                pc_write = 1 ; 
+                                if (!n_flag) 
+                                    pc_src = 0 ;  
+                                else begin 
+                                    pc_src = 2 ; // PC ← R[rb]
+                                    flush = 1 ;  // ==>> FLSUH due to jump instruction [Handle in integretion]
+                                end
+                            end
+                           2 : begin  // JC 
+                                pc_write = 1 ; 
+                                if (!c_flag) 
+                                    pc_src = 0 ;  
+                                else begin 
+                                    pc_src = 2 ;    // PC ← R[rb]
+                                    flush = 1 ;     // ==>> FLSUH due to jump instruction [Handle in integretion]
+                                end
+                            end
+                            3 : begin  // JV
+                                pc_write = 1 ; 
+                                if (!v_flag) 
+                                    pc_src = 0 ;  
+                                else begin 
+                                    pc_src = 2 ;     // PC ← R[rb]
+                                    flush = 1 ;      // ==>> FLSUH due to jump instruction [Handle in integretion]
+                                end
+                            end
+                        endcase
+                    end
+                    LOOP : begin        // LOOP ( R[ra]-- ; if(R[ra]≠0) PC←R[rb] )
+                        alu_op = ALU_UNARY ;
+                        pc_write = 1 ;
+                        pc_src = 0 ;
+                        mem_read = 1;
+                        dec_ra = 1;
+                        reg_write = 1 ; 
+                        reg_dist = ra ; 
+                        is_loop = 1 ; 
+                        wb_result_mux = 3;
+                        // Stall to wait for condition evaluation in LOOP_DECIDE
+                    end
+                    JUMP : begin                // JMP & CALL & RET &RTI 
+                        case (brx) 
+                            0 : begin           //JMP 
+                                pc_write = 1 ; 
+                                ir_write = 1;
+                                mem_read = 1; 
+                                pc_src = 2 ;    // PC ← R[rb]
+                                flush = 1 ;     //==>> FLUSH due to jump instruction [Handle in integretion]
+                            end
+                            1 : begin           // CALL  (X[SP--] ← PC + 1; PC ← R[rb]) 
+                                stack_push = 1 ; 
+                                pc_write = 1 ; 
+                                ir_write = 1;
+                                mem_read = 1; 
+                                pc_src = 2 ;   /// PC ← R[rb]
+                                mem_write = 1; 
+                                //==>>>Stall For Double memory access [Handle in hazard depending on mem_src]
+                                mem_src = 2 ;  // SP source 
+                                stack_push_mux = 1 ;  // Push PC+1 into stack (Not Rb )
+                            end
+                            2 : begin       // RET  (PC ← X[++SP])
+                                stack_pop = 1 ;   
+                                pc_write = 1; 
+                                ir_write = 1;
+                                mem_read = 1;
+                                stack_pop_mux = 1 ;  // Pop to pc 
+                                pc_src = 3 ;  // stack source  
+                                flush = 1 ;    //==>> FLUSH due to jump instruction [Handle in integretion]
+                            end
+                            3 : begin       // RTI  (PC ← X[++SP] ; Flags restored )
+                                stack_pop = 1 ;     
+                                pc_write = 1; 
+                                ir_write = 1;
+                                mem_read = 1;
+                                stack_pop_mux = 1 ;  // Pop to pc  
+                                pc_src = 3 ;  // stack source 
+                                flush = 1 ;    //==>> FLSUH due to jump instruction [Handle in integretion]
+                                restore_flags = 1 ; 
+                            end
+                        endcase
+                    end
+                    // ---------------- L-FORMAT -----------------// 
+                    LOAD_STORE : begin         // LDM 
+                        case (ra) 
+                            0 : begin           // LDM  ( R[rb] ← imm )
+                                mem_read = 1 ; 
+                                pc_write = 1 ;
+                                ir_write = 0; 
+                                imm_write = 1; 
+                                pc_src = 0 ;  // pc+1
+                                reg_write = 1 ; 
+                                reg_dist = rb ; 
+                                is_two_byte = 1 ; // To swap to FETCH2 state
+                                wb_result_mux = 2;
+                                /* Here we should consider connecting the immediate register 
+                                with the register file input   */
+                            end
+                            1 : begin           //LDD (R[rb] ← M[ea])
+                                mem_read = 1 ;  // ==>>>> remeber to handle two double memory access [Handled in hazard unit ]
+                                wb_result_mux = 0;
+                                ir_write = 0; 
+                                imm_write = 1; 
+                                pc_write = 1 ; 
+                                pc_src = 0 ;    // pc+1
+                                reg_write = 1 ; 
+                                reg_dist = rb ;  
+                                is_two_byte = 1 ; // To swap to FETCH2 state
+                                mem_src = 3 ;   // Immediate register source 
+                                /* Here we should consider connecting  the memory with register file
+                                and immediate register    */
+                            end
+                            2 : begin           //STD  ( M[ea] ←R[rb])
+                                mem_read = 1 ;  // ==>>>>> dont forget to handle double memory access [Handled in hazard unit ]
+                                mem_write = 1 ;   
+                                pc_write = 1 ; 
+                                ir_write = 0; 
+                                imm_write = 1; 
+                                pc_src = 0 ;  // pc+1
+                                is_two_byte = 1 ; // To swap to FETCH2 state
+                                mem_src = 3 ; // Immediate register source 
+                                /* Here we should consider connecting  the memory with register file
+                                and immediate register    */
+                            end
+                        endcase
+                        LDI : begin             // LDI (R[rb] ← M[R[ra]])
+                                mem_read = 1 ;  // ==>>>>> dontt forget to handle double memory access [Handled in hazard unit ]
+                                wb_result_mux = 0;  
+                                pc_write = 1 ; 
+                                pc_src = 0 ;  // pc+1
+                                reg_write = 1 ; 
+                                reg_dist = rb ; 
+                                mem_src = 1 ; // Register file source (ra)
+                                /*  Here we have to consider connecting memory with register file   */
+                        end
+                        STI : begin            // STI  (M[R[ra]] ←R[rb])
+                            mem_read = 1 ; // ==>>>>> dontt forget to handle double memory access [Handled in hazard unit ]   
+                            pc_write = 1; 
+                            pc_src = 0 ; // pc+1 
+                            mem_write = 1 ; 
+                            mem_src = 1 ; // Register file source (ra)
+                            /*  Here we have to consider connecting memory with register file   */
+                        end
                     end
                 endcase
             end
