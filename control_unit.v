@@ -3,10 +3,10 @@ module control_unit(
     input clk,
     input rst,
     input [7:0] instruction, // Current instruction from ID stage
-    input wire z_flag,                  // Zero flag from Flags Register
-    input wire n_flag,                  // Negative flag
-    input wire c_flag,                  // Carry flag
-    input wire v_flag,                  // Overflow flag
+    input z_flag,                  // Zero flag from Flags Register
+    input n_flag,                  // Negative flag
+    input c_flag,                  // Carry flag
+    input v_flag,                  // Overflow flag
     input interrupt,
     // -------------Control Signals-------------
     // ALU Control
@@ -40,7 +40,7 @@ module control_unit(
     output reg port_in_read,
     // States Control
     output reg is_two_byte,            // Two-byte instruction indicator
-    output reg is_loop ;             // LOOP instruction indicator (Makes transition to LOOP_DECIDE state )
+    output reg is_loop ,             // LOOP instruction indicator (Makes transition to LOOP_DECIDE state )
     output reg flush,               // Flush IF stage
     // Interrupt Control
     output reg interrupt_save          // Save context for interrupt
@@ -444,6 +444,7 @@ module control_unit(
                                 and immediate register    */
                             end
                         endcase
+                    end
                         LDI : begin             // LDI (R[rb] ← M[R[ra]])
                                 mem_read = 1 ;  // ==>>>>> dontt forget to handle double memory access [Handled in hazard unit ]
                                 wb_result_mux = 0;  
@@ -462,7 +463,6 @@ module control_unit(
                             mem_src = 1 ; // Register file source (ra)
                             /*  Here we have to consider connecting memory with register file   */
                         end
-                    end
                 endcase
             end
         endcase
