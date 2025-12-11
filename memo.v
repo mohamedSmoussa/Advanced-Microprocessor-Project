@@ -11,10 +11,10 @@ module memory_stack (
     input wire [3:0] stack_ctrl,             // Stack op [3:0] from CU: 0000=none, 0001=PUSH, 0010=POP,
                                              // 0011=CALL (push PC+1), 0100=RET (pop PC), 0101=RTI (pop PC+flags),
                                              // 0110=INTR_push (push PC+flags seq), 0111=INTR_flags (2nd push for flags)
-    input wire [7:0] sp,                 // Current SP [7:0] from RegFile (R3)
+    input wire [7:0] sp,                     // Current SP [7:0] from RegFile (R3)
     input wire stack_push,
     input wire stack_pop,
-    input wire [7:0] pc,                 // PC [7:0] for CALL/INTR push (from Fetch/PC unit)
+    input wire [7:0] pc,                     // PC [7:0] for CALL/INTR push (from Fetch/PC unit)
     input wire [3:0] ccr_in,                 // CCR flags [3:0] (V=3,C=2,N=1,Z=0) for RTI/INTR push (from Flags)
     input wire [7:0] in_port,                // External IN_PORT [7:0] (top-level input)
     output reg [7:0] sp_out,
