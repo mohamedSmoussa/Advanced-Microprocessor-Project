@@ -12,16 +12,17 @@ module top_module(
     wire [2:0]  pc_src;         
     wire [7:0]  pc_branch;
     wire [7:0]  pc_stack;
-    wire [7:0]  mem_data;     // mem_data = M[PC] or M[p
-    wire [7:0] interrupt_addr;  // M[1]
+    wire [7:0]  mem_data;   
+    wire [7:0] interrupt_addr;  
     wire [7:0]  PC;
     wire [7:0]  IR;
     wire [7:0]  imm;
     wire [7:0]  PC_plus_1;
     wire [7:0]  PC_plus_2;
 
-
+    //------------------------------------FETCH UNIT---------------------------// 
     fetch_unit f_module (
+        // INPUTS 
         .clk(clk),
         .rst(rst),
         .pc_write(pc_write),
@@ -33,6 +34,7 @@ module top_module(
         .pc_stack(pc_stack),
         .mem_data(mem_data), 
         .interrupt_addr(interrupt_addr),
+        // OUTPUTS
         .PC(PC),
         .IR(IR),
         .imm(imm),
@@ -43,15 +45,19 @@ module top_module(
     wire flush ;
     wire [7:0]  if_instruction;
     wire [7:0]  id_instruction;
+
     if_id_register decode_pipe(
+        // INPUTS 
         .clk(clk),
         .rst(rst),
         .stall(stall),  
         .flush(flush),  
         .if_instruction(if_instruction),
+        //OUTPUT
         .id_instruction(id_instruction)
     );
 
+    // ------------------CONTROL UNIT ---------------------------//
     wire [3:0] alu_op;
     wire dec_ra;
     wire reg_write;      
@@ -86,8 +92,9 @@ module top_module(
         .z_flag(z_flag),                 
         .n_flag(n_flag),                 
         .c_flag(c_flag),                 
-        .v_flag(v_flag),                 
+        .v_flag(v_flag),   
         .interrupt(interrupt),
+        // OUTPUTS              
         .alu_op(alu_op),
         .dec_ra(dec_ra), 
         .reg_write(reg_write),       
@@ -118,7 +125,9 @@ module top_module(
     wire [1:0] wb_reg_dist;
     wire [7:0] wb_result;
     wire [7:0]  read_data_a ,  read_data_b, sp_value ;
+
     register_file  reg_file_module(
+        //INPUTS
         .clk(clk),
         .rst(rst),
         .write_en(wb_reg_write),
@@ -126,6 +135,9 @@ module top_module(
         .read_addr_b(id_instruction[1:0]), 
         .write_addr(wb_reg_dist),
         .write_data(wb_result),
+        .stack_pop (stack_pop_wb ), 
+        .stack_push (stack_push_wb), 
+        //OUTPUTS
         .read_data_a(read_data_a),
         .read_data_b(read_data_b), 
         .sp_value(sp_value)
@@ -168,8 +180,10 @@ module top_module(
     wire ex_clrc;
     wire setc;
     wire clrc;
+    wire [7:0] sp_value_ex ; 
 
     id_ex_register ex_module(
+        //INPUTS
         .clk(clk),
         .rst(rst),
         .flush(flush), 
@@ -191,6 +205,8 @@ module top_module(
         .mem_src(mem_src),
         .setc(setc),
         .clrc(clrc),
+        .sp_value (sp_value) , 
+        // OUTPUTS
         .ex_reg_write(ex_reg_write),
         .ex_mem_read(ex_mem_read),
         .ex_mem_write(ex_mem_write),
@@ -208,10 +224,12 @@ module top_module(
         .stack_push_ex(stack_push_ex),
         .stack_pop_ex(stack_pop_ex)
         .ex_setc(ex_setc),                
-        .ex_clrc(ex_clrc) 
+        .ex_clrc(ex_clrc) , 
+        ,sp_value_ex (sp_value_ex)
     );
 
-     
+     //--------------------EXCUTE STAGE---------------------//
+
     wire [1:0] ex_rd;      
     wire [1:0] mem_rd;     
     wire [1:0] wb_rd;
@@ -274,6 +292,30 @@ module top_module(
         .flags_update(flags_update)                
     ); 
 
+    wire update_flags,z_in,n_in,c_in,v_in,setc,clrc,restore_flags;
+    wire [3:0] restore_flags_value;
+    wire [3:0] flags_out;
+
+    flags_reg flag_inst(
+        //INPUTS
+        .clk(clk),                
+        .rst(rst),                
+        .update_flags(flags_update),                
+        .z_in(z_flag_alu_out),                
+        .n_in(n_flag_alu_out),                
+        .c_in(c_flag_alu_out),                
+        .v_in(v_flag_alu_out),           
+        .setc(ex_setc),                
+        .clrc(ex_clrc),             
+        .restore_flags(restore_flags),              // HELPPP  
+        .restore_flags_value(restore_flags_value),     // HELPPP
+        //OUTPUTS
+        .z_flag(z_flag),                
+        .n_flag(n_flag),                
+        .v_flag(v_flag),                
+        .c_flag(c_flag),                
+        .flags_out(flags_out)                
+    );
 
     wire ex_reg_write;
     wire ex_mem_read;
@@ -298,9 +340,11 @@ module top_module(
     wire [1:0] stack_push_mux_mem ;
     wire stack_pop_mux_mem;
     wire stack_push_mem;
+    wire [7:0] sp_value_mem ;
     wire stack_pop_mem;
 
     ex_mem_register mem_stage_reg(
+        //INPUTS
         .clk(clk),
         .rst(rst),
         .flush(flush),
@@ -316,6 +360,7 @@ module top_module(
         .stack_pop_mux_ex(stack_pop_mux_ex),                 
         .stack_push_ex(stack_push_ex),                 
         .stack_pop_ex(stack_pop_ex),    
+        .sp_value_ex (sp_value_ex) ,
         // outputs             
         .mem_reg_write(mem_reg_write),                
         .mem_mem_read(mem_mem_read),                
@@ -328,89 +373,90 @@ module top_module(
         .stack_push_mux_mem(stack_push_mux_mem),                
         .stack_pop_mux_mem(stack_pop_mux_mem),                
         .stack_push_mem(stack_push_mem),                
-        .stack_pop_mem(stack_pop_mem)                
+        .stack_pop_mem(stack_pop_mem) , 
+        .sp_value_mem (sp_value_mem)           
     );
+
+    //----------------------MEMORY STAGE ------------------------------//
 
     wire mem_en;                       // Memory enable (from CU; active in MEM stage)
     wire mem_read;                     // Read control (from CU; combo out)
     wire mem_write;                    // Write control (from CU; sync write)
     
+    wire port_sel;                     // 1=I/O ports (IN/OUT); 0=memory/stack (from CU)
     wire [7:0] mem_addr;               // Base address [7:0] (PC/ea from EX/Fetch)
     wire [7:0] mem_data_in;            // Write data [7:0] (R[rb]/imm/PC/flags from datapath
-  
-   
+    wire [3:0] stack_ctrl;             // Stack op [3:0] from CU: 0000=none; 0001=PUSH; 0010=POP;
+                                            // 0011=CALL (push PC+1); 0100=RET (pop PC); 0101=RTI (pop PC+flags);
+                                            // 0110=INTR_push (push PC+flags seq); 0111=INTR_flags (2nd push for flags)
+    wire [7:0] sp;                     // Current SP [7:0] from RegFile (R3)
+    wire stack_push;
+    wire stack_pop;
+    wire [7:0] pc;                     // PC [7:0] for CALL/INTR push (from Fetch/PC unit)
     wire [3:0] ccr_in;                 // CCR flags [3:0] (V=3;C=2;N=1;Z=0) for RTI/INTR push (from Flags)
+    wire [7:0] in_port;                // External IN_PORT [7:0] (top-level input)
     wire [7:0] sp_out;
     wire [7:0] mem_data_out;           // Read data [7:0] (to RegFile/PC mux in WB/EX)
+    wire [7:0] out_port;               // OUT_PORT [7:0] (top-level output, latched)
     wire [3:0] ccr_out;                 // Restored CCR [3:0] for RTI (to Flags Unit)
-    wire [7:0]  imm_ea;   
+    wire [7:0]  imm_ea; 
+    wire [7:0]  instr;   
 
    memory_stack mem(
-        //input
         .clk(clk),                
         .rst(rst),                
         .mem_en(mem_en),                
         .mem_read(mem_read),                
-        .mem_write(mem_write),                               
+        .mem_write(mem_write),                
+        .port_sel(port_sel),                
         .mem_addr(mem_addr),                
-        .mem_data_in(mem_data_in),                                                              
-        .ccr_in(ccr_in), 
-        //outputs                              
+        .mem_data_in(mem_data_in),                
+        .stack_ctrl(stack_ctrl),                
+        .sp(sp),                
+        .stack_push(stack_push),                
+        .stack_pop(stack_pop),                
+        .pc(pc),                
+        .ccr_in(ccr_in),                
         .sp_out(sp_out),                
-        .mem_data_out(mem_data_out),                              
+        .mem_data_out(mem_data_out),                
+        .out_port(out_port),                
         .ccr_out(ccr_out),                
         .imm_ea(imm_ea),                
-                     
+        .instr(instr)              
     );
 
-
-    wire  mem_reg_write;
+     
     wire  [7:0]  mem_result;  
-    wire  [1:0]  mem_rd;
-    wire  [2:0]  wb_result_mux_mem ;    
     wire wb_reg_write;
     wire [7:0] wb_result;
     wire [1:0]  wb_reg_dist;
     wire [2:0]  wb_result_mux;
+    wire stack_pop_wb ; 
+    wire stack_push_wb ; 
+    
+    assign mem_result = (wb_result_mux_mem == 2'b00) ? /* memory output port */ :
+                                  (wb_result_mux_mem == 2'b01) ? imm // doesnt matter as it will never be 1   :
+                                  (wb_result_mux_mem == 2'b10) ? imm   : 
+                                (wb_result_mux_mem == 2'b11)  ?   mem_alu_result :  in_port ;                            
 
     mem_wb_register wb_stage_reg(
+        // inputs
         .clk(clk),                
         .rst(rst),                
         .flush(flush),                
         .mem_reg_write(mem_reg_write),                
-        .mem_result(mem_alu_result),                
+        .mem_result(mem_result),                
         .mem_rd(mem_rd),  
+        .stack_pop_mem (stack_pop_mem) , 
+        .stack_push_mem (stack_push_mem) , 
         // outputs              
         // .wb_result_mux_mem(wb_result_mux_mem),                
         .wb_reg_write(wb_reg_write),                
         .wb_result(wb_result),                
-        .wb_reg_dist(wb_reg_dist)               
+        .wb_reg_dist(wb_reg_dist)  ,   
+        .stack_pop_wb (stack_pop_wb)    , 
+        .stack_push_wb (stack_push_wb)      
         // .wb_result_mux(wb_result_mux)                
-    );
-
-    wire update_flags,z_in,n_in,c_in,v_in,setc,clrc,restore_flags;
-    wire [3:0] restore_flags_value;
-    wire [3:0] flags_out;
-
-
-    flags_reg flag_inst(
-        .clk(clk),                
-        .rst(rst),                
-        .update_flags(flags_update),                
-        .z_in(z_flag_alu_out),                
-        .n_in(n_flag_alu_out),                
-        .c_in(c_flag_alu_out),                
-        .v_in(v_flag_alu_out),           
-        .setc(ex_setc),                
-        .clrc(ex_clrc),             
-        // Mohy Part 
-        .restore_flags(restore_flags),                
-        .restore_flags_value(restore_flags_value),                
-        .z_flag(z_flag),                
-        .n_flag(n_flag),                
-        .v_flag(v_flag),                
-        .c_flag(c_flag),                
-        .flags_out(flags_out)                
     );
 
 endmodule          

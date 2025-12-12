@@ -2,6 +2,7 @@ module register_file (
     input clk,rst,write_en,
     input [1:0] read_addr_a, read_addr_b, write_addr,
     input [7:0] write_data,
+    input stack_pop , stack_push , // new signals added for sp increment or decrement
     output reg [7:0]  read_data_a, read_data_b, 
     output [7:0] sp_value
 );
@@ -18,6 +19,13 @@ always @(posedge clk or posedge rst) begin
     else if (write_en) begin
         R[write_addr] <= write_data;
     end
+end
+
+always @ (posedge clk ) begin  // new always block added for sp inc and dec
+    if (stack_pop)
+        R3 <= (R3 + 1) ; 
+    if (stack_push)
+        R3 <= (R3 - 1) ; 
 end
 
 always @(*) begin

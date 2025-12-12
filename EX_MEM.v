@@ -14,6 +14,7 @@ module ex_mem_register (
     input stack_pop_mux_ex,
     input stack_push_ex,
     input stack_pop_ex,
+    input [7:0] sp_value_ex , 
     output reg mem_reg_write,
     output reg mem_mem_read,
     output reg mem_mem_write,
@@ -25,6 +26,7 @@ module ex_mem_register (
     output reg [1:0] stack_push_mux_mem ,
     output reg stack_pop_mux_mem,
     output reg stack_push_mem,
+    output [7:0] sp_value_mem , 
     output reg stack_pop_mem
 );
 always @(posedge clk or posedge rst) begin

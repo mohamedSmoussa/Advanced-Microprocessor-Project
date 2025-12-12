@@ -20,6 +20,7 @@ module id_ex_register (
     input [1:0] mem_src,
     input setc,
     input clrc,
+    input [7:0] sp_value , 
     output reg ex_reg_write,
     output reg ex_mem_read,
     output reg ex_mem_write,
@@ -37,7 +38,8 @@ module id_ex_register (
     output reg stack_push_ex,
     output reg ex_setc,
     output reg ex_clrc,
-    output reg stack_pop_ex
+    output reg stack_pop_ex ,
+    output [7:0] sp_value_ex 
 );
 
 always @(posedge clk or posedge rst) begin
@@ -100,6 +102,7 @@ always @(posedge clk or posedge rst) begin
         stack_pop_mux_ex<=stack_pop_mux;
         ex_setc<=setc;
         ex_clrc<=clrc;
+        sp_value_ex <= sp_value ; 
     end
 end
 endmodule
