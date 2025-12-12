@@ -335,47 +335,33 @@ module top_module(
     wire mem_read;                     // Read control (from CU; combo out)
     wire mem_write;                    // Write control (from CU; sync write)
     
-    wire port_sel;                     // 1=I/O ports (IN/OUT); 0=memory/stack (from CU)
     wire [7:0] mem_addr;               // Base address [7:0] (PC/ea from EX/Fetch)
     wire [7:0] mem_data_in;            // Write data [7:0] (R[rb]/imm/PC/flags from datapath
-    wire [3:0] stack_ctrl;             // Stack op [3:0] from CU: 0000=none; 0001=PUSH; 0010=POP;
-                                            // 0011=CALL (push PC+1); 0100=RET (pop PC); 0101=RTI (pop PC+flags);
-                                            // 0110=INTR_push (push PC+flags seq); 0111=INTR_flags (2nd push for flags)
-    wire [7:0] sp;                     // Current SP [7:0] from RegFile (R3)
+  
     wire stack_push;
     wire stack_pop;
-    wire [7:0] pc;                     // PC [7:0] for CALL/INTR push (from Fetch/PC unit)
     wire [3:0] ccr_in;                 // CCR flags [3:0] (V=3;C=2;N=1;Z=0) for RTI/INTR push (from Flags)
-    wire [7:0] in_port;                // External IN_PORT [7:0] (top-level input)
     wire [7:0] sp_out;
     wire [7:0] mem_data_out;           // Read data [7:0] (to RegFile/PC mux in WB/EX)
-    wire [7:0] out_port;               // OUT_PORT [7:0] (top-level output, latched)
     wire [3:0] ccr_out;                 // Restored CCR [3:0] for RTI (to Flags Unit)
-    wire [7:0]  imm_ea; 
-    wire [7:0]  instr;   
+    wire [7:0]  imm_ea;   
 
    memory_stack mem(
+        //input
         .clk(clk),                
         .rst(rst),                
         .mem_en(mem_en),                
         .mem_read(mem_read),                
-        .mem_write(mem_write),                
-        .port_sel(port_sel),                
+        .mem_write(mem_write),                               
         .mem_addr(mem_addr),                
-        .mem_data_in(mem_data_in),                
-        .stack_ctrl(stack_ctrl),                
-        .sp(sp),                
-        .stack_push(stack_push),                
-        .stack_pop(stack_pop),                
-        .pc(pc),                
-        .ccr_in(ccr_in),                
-        .in_port(in_port),                
+        .mem_data_in(mem_data_in),                                                              
+        .ccr_in(ccr_in), 
+        //outputs                              
         .sp_out(sp_out),                
-        .mem_data_out(mem_data_out),                
-        .out_port(out_port),                
+        .mem_data_out(mem_data_out),                              
         .ccr_out(ccr_out),                
         .imm_ea(imm_ea),                
-        .instr(instr)              
+                     
     );
 
 

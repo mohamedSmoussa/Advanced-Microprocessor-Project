@@ -7,9 +7,8 @@ module memory_stack (
     
     input wire [7:0] mem_addr,               // Base address [7:0] (PC/ea from EX/Fetch)
     input wire [7:0] mem_data_in,            // Write data [7:0] (R[rb]/imm/PC/flags from datapath
+    
 
-    input wire stack_push,
-    input wire stack_pop,
     input wire [3:0] ccr_in,                 // CCR flags [3:0] (V=3,C=2,N=1,Z=0) for RTI/INTR push (from Flags)
     input wire save_flags,
     input wire restore_flags,
@@ -73,18 +72,20 @@ if (mem_write) begin
 //mem datain is muxed : data from reg - pc - pc+1
 if(mem_addr >= 200 && mem_addr <= 255)begin
 mem[mem_addr] <= mem_data_in;
+
     if(mem_addr > 200 && mem_addr <= 255) begin
-    sp_out <= mem_addr-1;
+        sp_out <= mem_addr-1;
     end
     //due to stack overflow ,acheived the limit of stack
     else if (mem_addr == 200 )begin 
         sp_out<=mem_addr;
     end
+
     // INTR flags push
     // imp note while saving the flags we dont update the sp it stays pointing on flags 
-            if(save_flags)begin
-            mem[mem_addr-1] <= {4'h0, ccr_in};  // High 0, low: V C N Z
-            end
+    if(save_flags)begin
+    mem[mem_addr-1] <= {4'h0, ccr_in};  // High 0, low: V C N Z
+    end
 
 end
 //MEMO handling STD/STI INSTRUCTION write: M[ea] <- R[rb]
@@ -92,11 +93,7 @@ end
 //mux for addr = ea L format 
 if(mem_addr >= 156 && mem_addr <= 199)  begin
         mem[mem_addr] <= mem_data_in;
-        end     
-
-            
-        
-    
+        end       
 end
 end
 end
@@ -126,21 +123,15 @@ if(mem_read) begin
     else if (mem_addr==255)begin 
     sp_out=mem_addr;
     end
+    
     if(restore_flags)begin
     ccr_out = mem[mem_addr][3:0]; 
     end
     end
-
-    
-
-//deafult case to load in memo 
 // LDD/LDI: mem_data_out <- M[ea]
     if(mem_addr >= 156 && mem_addr <= 199) begin 
     mem_data_out = mem[mem_addr];
     end
-    
-
-
 
 end
 end
