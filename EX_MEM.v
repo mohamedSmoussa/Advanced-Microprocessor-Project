@@ -19,13 +19,13 @@ module ex_mem_register (
     output reg mem_mem_write,
     output reg [7:0]  mem_alu_result,
     output reg [7:0]  mem_write_data,
-    output reg [1:0]  mem_reg_dist,
+    output reg [1:0]  mem_rd,
     output reg [2:0]  wb_result_mux_mem,
-    output reg [1:0]  mem_src ,
-    output reg [1:0] stack_push_mux ,
-    output reg stack_pop_mux,
-    output reg stack_push,
-    output reg stack_pop
+    output reg [1:0]  mem_src_mem ,
+    output reg [1:0] stack_push_mux_mem ,
+    output reg stack_pop_mux_mem,
+    output reg stack_push_mem,
+    output reg stack_pop_mem
 );
 always @(posedge clk or posedge rst) begin
     if (rst) begin
@@ -34,13 +34,13 @@ always @(posedge clk or posedge rst) begin
         mem_mem_write <= 0;
         mem_alu_result <= 8'b0;
         mem_write_data <= 8'b0;
-        mem_reg_dist<=0;
+        mem_rd<=0;
         wb_result_mux_mem<=0;
-        mem_src<=0;
-        stack_push<=0;
-        stack_push_mux<=0;
-        stack_pop<=0;
-        stack_pop_mux<=0;
+        mem_src_mem<=0;
+        stack_push_mem<=0;
+        stack_push_mux_mem<=0;
+        stack_pop_mem<=0;
+        stack_pop_mux_mem<=0;
     end 
     else if (flush) begin
         mem_reg_write <= 0;
@@ -48,13 +48,13 @@ always @(posedge clk or posedge rst) begin
         mem_mem_write <= 0;
         mem_alu_result  <= 8'b0;
         mem_write_data  <= 8'b0;
-        mem_reg_dist<=0;
+        mem_rd<=0;
         wb_result_mux_mem<=0;
-        mem_src<=0;
-        stack_push<=0;
-        stack_push_mux<=0;
-        stack_pop<=0;
-        stack_pop_mux<=0;
+        mem_src_mem<=0;
+        stack_push_mem<=0;
+        stack_push_mux_mem<=0;
+        stack_pop_mem<=0;
+        stack_pop_mux_mem<=0;
     end 
     else begin
         mem_reg_write <= ex_reg_write;
@@ -62,13 +62,13 @@ always @(posedge clk or posedge rst) begin
         mem_mem_write <= ex_mem_write;
         mem_alu_result <= ex_alu_result;
         mem_write_data <= ex_write_data;
-        mem_reg_dist<= ex_reg_dist;
+        mem_rd<= ex_reg_dist;
         wb_result_mux_mem <= wb_result_mux_ex;
-        mem_src<=mem_src_ex;
-        stack_push<=stack_push_ex;
-        stack_push_mux<=stack_pop_mux_ex;
-        stack_pop<=stack_pop_ex;
-        stack_pop_mux<=stack_pop_mux_ex;
+        mem_src_mem<=mem_src_ex;
+        stack_push_mem<=stack_push_ex;
+        stack_push_mux_mem<=stack_pop_mux_ex;
+        stack_pop_mem<=stack_pop_ex;
+        stack_pop_mux_mem<=stack_pop_mux_ex;
     end
 end
 endmodule

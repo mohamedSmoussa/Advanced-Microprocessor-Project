@@ -3,7 +3,7 @@ module hazard_unit #(
 ) (
     input [1:0] id_rs,      
     input [1:0] id_rt,      
-    input [1:0] ex_rd,      
+    input [1:0] ex_reg_dist,      
     input [1:0] mem_rd,     
     input [1:0] wb_rd,
     input [1:0] mem_src, // lazem ba3d el memory  stage msh abl    
@@ -15,8 +15,8 @@ module hazard_unit #(
     output reg [1:0] forward_b,   
     output reg  stall        
 );
-    wire ex_eq_rs = (ex_rd == id_rs)?1:0;    // dest in ex h7tago in next decode (RAW1)
-    wire ex_eq_rt = (ex_rd == id_rt)?1:0;    // dest in ex h7tago in next decode (RAW2)
+    wire ex_eq_rs = (ex_reg_dist == id_rs)?1:0;    // dest in ex h7tago in next decode (RAW1)
+    wire ex_eq_rt = (ex_reg_dist == id_rt)?1:0;    // dest in ex h7tago in next decode (RAW2)
     wire mem_eq_rs = (mem_rd == id_rs)?1:0;  // dest in mem h7tago feh deocode zy el load msln 
     wire mem_eq_rt = (mem_rd == id_rt)?1:0;  // dest in mem h7tago feh deocode zy el load msln (2)
     wire wb_eq_rs  = (wb_rd  == id_rs)?1:0;  // dest in wb h7tago feh decode 

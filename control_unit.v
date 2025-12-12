@@ -25,8 +25,8 @@ module control_unit(
     // PC Control
     output reg pc_write, 
     output reg [2:0] pc_src, // MUX in Fetch unit to select output of pc-> 0: PC+1 , 1: PC+2 , 2: Branch [PC←Rb] , 3: Stack , 4: M[0], 5: M[1]
-    output reg ir_write,    //Instruction register write control signal
-    output reg imm_write,  //Immediate register write control signal
+    output reg ir_write,    // Instruction register write control signal
+    output reg imm_write,  // Immediate register write control signal
     // Stack Control
     output reg stack_push,
     output reg stack_pop,
@@ -39,8 +39,6 @@ module control_unit(
     output reg port_out_write,
     output reg port_in_read,
     // States Control
-    output reg is_two_byte,            // Two-byte instruction indicator
-    output reg is_loop ,             // LOOP instruction indicator (Makes transition to LOOP_DECIDE state )
     output reg flush,               // Flush IF stage
     // Interrupt Control
     output reg interrupt_save          // Save context for interrupt
@@ -53,6 +51,9 @@ module control_unit(
     localparam INT_HANDLE  = 2'd2;  // Handling interrupt
     localparam LOOP_DECIDE = 2'd3 ; //Handling loop condition desicion
 
+    // States Control
+    reg is_two_byte;         // Two-byte instruction indicator
+    reg is_loop;             // LOOP instruction indicator (Makes transition to LOOP_DECIDE state )
     // Current and next state
     reg [1:0] cs, ns; 
 

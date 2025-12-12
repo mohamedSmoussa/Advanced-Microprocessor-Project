@@ -4,8 +4,8 @@ module mem_wb_register (
     input  flush,  
     input  mem_reg_write,
     input  [7:0]  mem_result,  
-    input  [1:0]  mem_reg_dist,
-    input  [2:0]  wb_result_mux_mem ,    
+    input  [1:0]  mem_rd,
+    // input  [2:0]  wb_result_mux_mem ,    
     output reg wb_reg_write,
     output reg [7:0] wb_result,
     output reg [1:0]  wb_reg_dist,
@@ -27,8 +27,8 @@ always @(posedge clk or posedge rst) begin
     else begin
         wb_reg_write <= mem_reg_write;
         wb_result  <= mem_result;
-        wb_reg_dist<=mem_reg_dist;
-        wb_result_mux<=wb_result_mux_mem;
+        wb_reg_dist<=mem_rd;
+        // wb_result_mux<=wb_result_mux_mem;
     end
 end
 endmodule

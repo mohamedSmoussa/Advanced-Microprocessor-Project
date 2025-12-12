@@ -20,7 +20,7 @@ module memory_stack (
     output reg [7:0] sp_out,
     output reg [7:0] mem_data_out,           // Read data [7:0] (to RegFile/PC mux in WB/EX)
     output reg [7:0] out_port,               // OUT_PORT [7:0] (top-level output, latched)
-    output reg [3:0] ccr_out                 // Restored CCR [3:0] for RTI (to Flags Unit)
+    output reg [3:0] ccr_out,                 // Restored CCR [3:0] for RTI (to Flags Unit)
     output reg  [7:0]  imm_ea; 
     output reg  [7:0]  instr;    
 );

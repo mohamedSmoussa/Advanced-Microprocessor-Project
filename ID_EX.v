@@ -18,6 +18,8 @@ module id_ex_register (
     input stack_pop,
     input [1:0] reg_dist,
     input [1:0] mem_src,
+    input setc,
+    input clrc,
     output reg ex_reg_write,
     output reg ex_mem_read,
     output reg ex_mem_write,
@@ -33,6 +35,8 @@ module id_ex_register (
     output reg [1:0] stack_push_mux_ex ,
     output reg stack_pop_mux_ex,
     output reg stack_push_ex,
+    output reg ex_setc,
+    output reg ex_clrc,
     output reg stack_pop_ex
 );
 
@@ -54,7 +58,8 @@ always @(posedge clk or posedge rst) begin
         stack_push_mux_ex<=0;
         stack_pop_ex<=0;
         stack_pop_mux_ex<=0;
-
+        ex_setc<=0;
+        ex_clrc<=0;
     end 
     else if (flush) begin
         ex_reg_write <= 0;
@@ -73,6 +78,8 @@ always @(posedge clk or posedge rst) begin
         stack_push_mux_ex<=0;
         stack_pop_ex<=0;
         stack_pop_mux_ex<=0;
+        ex_setc<=0;
+        ex_clrc<=0;
     end 
     else begin
         ex_reg_write <= id_reg_write;
@@ -91,6 +98,8 @@ always @(posedge clk or posedge rst) begin
         stack_push_mux_ex<=stack_pop_mux;
         stack_pop_ex<=stack_pop;
         stack_pop_mux_ex<=stack_pop_mux;
+        ex_setc<=setc;
+        ex_clrc<=clrc;
     end
 end
 endmodule
