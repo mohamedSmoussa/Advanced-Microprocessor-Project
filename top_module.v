@@ -338,8 +338,7 @@ module top_module(
     wire [7:0] mem_addr;               // Base address [7:0] (PC/ea from EX/Fetch)
     wire [7:0] mem_data_in;            // Write data [7:0] (R[rb]/imm/PC/flags from datapath
   
-    wire stack_push;
-    wire stack_pop;
+   
     wire [3:0] ccr_in;                 // CCR flags [3:0] (V=3;C=2;N=1;Z=0) for RTI/INTR push (from Flags)
     wire [7:0] sp_out;
     wire [7:0] mem_data_out;           // Read data [7:0] (to RegFile/PC mux in WB/EX)
