@@ -20,6 +20,7 @@ module id_ex_register (
     input [1:0] mem_src,
     input setc,
     input clrc,
+    input restore_flags , 
     input [7:0] sp_value , 
     output reg ex_reg_write,
     output reg ex_mem_read,
@@ -39,6 +40,7 @@ module id_ex_register (
     output reg ex_setc,
     output reg ex_clrc,
     output reg stack_pop_ex ,
+    output  restore_flags_ex,
     output [7:0] sp_value_ex 
 );
 
@@ -62,6 +64,7 @@ always @(posedge clk or posedge rst) begin
         stack_pop_mux_ex<=0;
         ex_setc<=0;
         ex_clrc<=0;
+        restore_flags_ex <=0;
     end 
     else if (flush) begin
         ex_reg_write <= 0;
@@ -82,6 +85,7 @@ always @(posedge clk or posedge rst) begin
         stack_pop_mux_ex<=0;
         ex_setc<=0;
         ex_clrc<=0;
+        restore_flags_ex <=0;
     end 
     else begin
         ex_reg_write <= id_reg_write;
@@ -103,6 +107,7 @@ always @(posedge clk or posedge rst) begin
         ex_setc<=setc;
         ex_clrc<=clrc;
         sp_value_ex <= sp_value ; 
+        restore_flags_ex <= restore_flags ; 
     end
 end
 endmodule

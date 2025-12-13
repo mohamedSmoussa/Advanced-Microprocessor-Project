@@ -120,7 +120,7 @@ module top_module(
     wire [7:0] result;
     wire z_flag_alu_out,n_flag_alu_out,c_flag_alu_out,v_flag_alu_out,flags_update;
     // Flags REG
-    wire update_flags,z_in,n_in,c_in,v_in,setc,clrc,restore_flags;
+    wire update_flags,z_in,n_in,c_in,v_in,setc,clrc,restore_flags_ex;
     wire [3:0] restore_flags_value;
     wire [3:0] flags_out;
     // EX/MEM
@@ -293,6 +293,7 @@ module top_module(
         .setc(setc),
         .clrc(clrc),
         .sp_value (sp_value) , 
+        .restore_flags (restore_flags) , 
         // OUTPUTS
         .ex_reg_write(ex_reg_write),
         .ex_mem_read(ex_mem_read),
@@ -312,6 +313,7 @@ module top_module(
         .stack_pop_ex(stack_pop_ex)
         .ex_setc(ex_setc),                
         .ex_clrc(ex_clrc) , 
+        .restore_flags_ex(restore_flags_ex)
         ,sp_value_ex (sp_value_ex)
     );
 
@@ -372,7 +374,7 @@ module top_module(
         .setc(ex_setc),                
         .clrc(ex_clrc),             
         .save_flags(save_flags),             
-        .restore_flags(restore_flags),   // Should be in pipeline registers             
+        .restore_flags(restore_flags_ex),   // Should be in pipeline registers             
         // .restore_flags_value(restore_flags_value),     
         //OUTPUTS
         .z_flag(z_flag),                
